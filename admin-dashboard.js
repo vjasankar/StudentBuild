@@ -4,6 +4,7 @@ const totalCount = document.getElementById("totalCount");
 const adminProjectsList = document.getElementById("adminProjectsList");
 const logoutBtn = document.getElementById("logoutBtn");
 
+let allAdminProjects = [];
 
 // ========================================
 // Check Admin Authentication
@@ -49,7 +50,7 @@ async function checkAdmin() {
     }
 
     // Display admin name
-    adminName.textContent = profile.full_name || "Admin";
+    if (adminName) adminName.textContent = profile.full_name || "Admin";
 
     // Unhide page body
     document.body.style.visibility = "visible";
@@ -96,331 +97,186 @@ async function loadProjects() {
     }
 
     console.log("Projects with student details:", projects);
+    allAdminProjects = projects || [];
 
+    renderAdminProjects(allAdminProjects);
+}
 
-    // ========================================
+function renderAdminProjects(projects) {
+
     // Statistics
-    // ========================================
+    if (totalCount) totalCount.textContent = projects ? projects.length : 0;
 
-    totalCount.textContent =
-        projects ? projects.length : 0;
+    let submittedCountVal = 0;
+    let acceptedCountVal = 0;
+    let rejectedCountVal = 0;
 
-    const submittedProjects =
-        projects
-            ? projects.filter(project => {
+    if (projects) {
+        projects.forEach(project => {
+            const status = String(project.status || "").trim().replace(/^['"]|['"]$/g, "").toLowerCase();
+            if (status === "submitted") submittedCountVal++;
+            else if (status === "accepted") acceptedCountVal++;
+            else if (status === "rejected" || status === "needs_details") rejectedCountVal++;
+        });
+    }
 
-                const status = String(project.status || "")
-                    .trim()
-                    .replace(/^['"]|['"]$/g, "")
-                    .toLowerCase();
+    if (submittedCount) submittedCount.textContent = submittedCountVal;
 
-                return status === "submitted";
+    const adminAcceptedCount = document.getElementById("adminAcceptedCount");
+    const adminRejectedCount = document.getElementById("adminRejectedCount");
+    if (adminAcceptedCount) adminAcceptedCount.textContent = acceptedCountVal;
+    if (adminRejectedCount) adminRejectedCount.textContent = rejectedCountVal;
 
-            })
-            : [];
-
-    submittedCount.textContent =
-        submittedProjects.length;
-
-
-    // ========================================
     // No projects
-    // ========================================
-
     if (!projects || projects.length === 0) {
-
         adminProjectsList.innerHTML = `
             <div class="empty-projects">
-                <h3>No projects yet</h3>
-                <p>
-                    Student project submissions will appear here.
-                </p>
+                <h3>No projects found</h3>
+                <p>Student project submissions will appear here.</p>
             </div>
         `;
-
         return;
     }
 
-
-    // ========================================
     // Display Projects
-    // ========================================
-
     adminProjectsList.innerHTML = "";
 
     projects.forEach(project => {
 
-        const card =
-            document.createElement("div");
-
+        const card = document.createElement("div");
         card.className = "project-card";
 
-
         // Normalize status
-        const normalizedStatus =
-            String(project.status || "")
-                .trim()
-                .replace(/^['"]|['"]$/g, "")
-                .toLowerCase();
+        const normalizedStatus = String(project.status || "")
+            .trim()
+            .replace(/^['"]|['"]$/g, "")
+            .toLowerCase();
 
+        let statusDisplay = "Submitted";
+        if (normalizedStatus === "accepted") statusDisplay = "Accepted";
+        else if (normalizedStatus === "rejected") statusDisplay = "Rejected";
+        else if (normalizedStatus === "needs_details") statusDisplay = "Needs Details";
 
         // Student information
         const student = project.student || {};
+        const studentName = student.full_name || "Not provided";
+        const studentEmail = student.email || "";
+        const studentPhone = student.phone || "";
+        const studentCollege = student.college || "Not provided";
+        const studentDepartment = student.department || "Not provided";
+        const studentYear = student.year || "Not provided";
 
-        const studentName =
-            student.full_name || "Not provided";
+        // Icon Domain
+        let domainIcon = "📁";
+        let domainIconClass = "teal";
+        const domLower = String(project.domain || "").toLowerCase();
+        if (domLower.includes("iot")) { domainIcon = "📶"; domainIconClass = "green"; }
+        else if (domLower.includes("ai") || domLower.includes("ml")) { domainIcon = "🌿"; domainIconClass = "purple"; }
+        else if (domLower.includes("web")) { domainIcon = "💻"; domainIconClass = "coral"; }
+        else if (domLower.includes("app")) { domainIcon = "📱"; domainIconClass = "teal"; }
 
-        const studentEmail =
-            student.email || "";
-
-        const studentPhone =
-            student.phone || "";
-
-        const studentCollege =
-            student.college || "Not provided";
-
-        const studentDepartment =
-            student.department || "Not provided";
-
-        const studentYear =
-            student.year || "Not provided";
-
-
-        // ========================================
-        // Project Card
-        // ========================================
+        const dateFormatted = project.created_at
+            ? new Date(project.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })
+            : "Recently";
 
         card.innerHTML = `
 
             <div class="project-card-header">
-
-                <h3>
-                    ${escapeHtml(project.title)}
-                </h3>
-
-                <span class="project-status">
-                    ${escapeHtml(
-            normalizedStatus || "Unknown"
-        )}
-                </span>
-
-            </div>
-
-
-            <p>
-                ${escapeHtml(project.description)}
-            </p>
-
-
-            <div class="project-details">
-
-                <span>
-                    <strong>Department:</strong>
-                    ${escapeHtml(project.department)}
-                </span>
-
-                <span>
-                    <strong>Domain:</strong>
-                    ${escapeHtml(project.domain)}
-                </span>
-
-                <span>
-                    <strong>Type:</strong>
-                    ${escapeHtml(project.project_type)}
-                </span>
-
-                <span>
-                    <strong>Budget:</strong>
-                    ${escapeHtml(
-            project.budget_range || "Not specified"
-        )}
-                </span>
-
-                <span>
-                    <strong>Deadline:</strong>
-                    ${escapeHtml(
-            project.deadline || "Not specified"
-        )}
-                </span>
-
-            </div>
-
-
-            <!-- ========================================
-                 Student Details
-            ========================================= -->
-
-            <div class="student-details">
-
-                <h4>👤 Student Details</h4>
-
-                <div class="student-detail-grid">
-
-                    <p>
-                        <strong>Name:</strong>
-                        ${escapeHtml(studentName)}
-                    </p>
-
-                    <p>
-                        <strong>Email:</strong>
-                        ${escapeHtml(
-            studentEmail || "Not provided"
-        )}
-                    </p>
-
-                    <p>
-                        <strong>Phone:</strong>
-                        ${escapeHtml(
-            studentPhone || "Not provided"
-        )}
-                    </p>
-
-                    <p>
-                        <strong>College:</strong>
-                        ${escapeHtml(studentCollege)}
-                    </p>
-
-                    <p>
-                        <strong>Department:</strong>
-                        ${escapeHtml(studentDepartment)}
-                    </p>
-
-                    <p>
-                        <strong>Year:</strong>
-                        ${escapeHtml(studentYear)}
-                    </p>
-
+                <div class="project-card-main-info">
+                    <div class="project-domain-icon-box ${domainIconClass}">
+                        ${domainIcon}
+                    </div>
+                    <div class="project-title-group">
+                        <h3>${escapeHtml(project.title)}</h3>
+                        <p>${escapeHtml(project.description)}</p>
+                    </div>
                 </div>
 
+                <div class="project-status-group">
+                    <span class="project-status status-${normalizedStatus}">
+                        ${escapeHtml(statusDisplay)}
+                    </span>
+                    <span class="project-date-text">Submitted on ${dateFormatted}</span>
+                </div>
+            </div>
 
-                <!-- ========================================
-                     Contact Actions
-                ========================================= -->
+            <div class="project-tags-row">
+                <span class="project-tag">${escapeHtml(project.department || "Dept")}</span>
+                <span class="project-tag">${escapeHtml(project.domain || "Domain")}</span>
+                <span class="project-tag">${escapeHtml(project.project_type || "Type")}</span>
+                <span class="project-tag" style="color: var(--accent-coral);">Budget: ${escapeHtml(project.budget_range || "Not specified")}</span>
+                ${project.deadline ? `<span class="project-tag">Deadline: ${escapeHtml(project.deadline)}</span>` : ""}
+            </div>
 
+            <!-- Student Details Box -->
+            <div class="student-details">
+                <h4>👤 Student Details & Contact Info</h4>
+                <div class="student-detail-grid">
+                    <p><strong>Name:</strong> ${escapeHtml(studentName)}</p>
+                    <p><strong>Email:</strong> ${escapeHtml(studentEmail || "Not provided")}</p>
+                    <p><strong>Phone:</strong> ${escapeHtml(studentPhone || "Not provided")}</p>
+                    <p><strong>College:</strong> ${escapeHtml(studentCollege)}</p>
+                    <p><strong>Department:</strong> ${escapeHtml(studentDepartment)}</p>
+                    <p><strong>Year:</strong> ${escapeHtml(studentYear)}</p>
+                </div>
+
+                <!-- Contact Actions -->
                 <div class="student-contact-actions">
+                    ${studentEmail ? `
+                        <a href="mailto:${encodeURIComponent(studentEmail)}" class="contact-button email">
+                            ✉ Email Student
+                        </a>
+                    ` : ""}
 
-                    ${studentEmail
-                ? `
-                                <a
-                                    href="mailto:${encodeURIComponent(studentEmail)}"
-                                    class="contact-button email"
-                                >
-                                    ✉ Email Student
-                                </a>
-                              `
-                : ""
-            }
+                    ${studentPhone ? `
+                        <a href="tel:${encodeURIComponent(studentPhone)}" class="contact-button call">
+                            ☎ Call Student
+                        </a>
+                    ` : ""}
 
-
-                    ${studentPhone
-                ? `
-                                <a
-                                    href="tel:${encodeURIComponent(studentPhone)}"
-                                    class="contact-button call"
-                                >
-                                    ☎ Call Student
-                                </a>
-                              `
-                : ""
-            }
-
-
-                    <button
-                        type="button"
-                        class="contact-button message"
-                        data-project-id="${project.id}"
-                        data-student-id="${student.id || ""}"
-                    >
+                    <button type="button" class="contact-button message" data-project-id="${project.id}" data-student-id="${student.id || ""}">
                         💬 Message Student
                     </button>
-
                 </div>
-
             </div>
 
-
-            <!-- ========================================
-                 Admin Project Actions
-            ========================================= -->
-
+            <!-- Admin Project Actions -->
             <div class="admin-project-actions">
+                ${["submitted", "needs_details"].includes(normalizedStatus) ? `
+                    <button class="admin-action accept" data-id="${project.id}" data-action="accepted">
+                        ✓ Accept
+                    </button>
 
-                ${["submitted", "needs_details"].includes(
-                normalizedStatus
-            )
+                    <button class="admin-action reject" data-id="${project.id}" data-action="rejected">
+                        ✕ Reject
+                    </button>
 
-                ? `
-
-                            <button
-                                class="admin-action accept"
-                                data-id="${project.id}"
-                                data-action="accepted"
-                            >
-                                ✓ Accept
-                            </button>
-
-
-                            <button
-                                class="admin-action reject"
-                                data-id="${project.id}"
-                                data-action="rejected"
-                            >
-                                ✕ Reject
-                            </button>
-
-
-                            ${normalizedStatus === "submitted"
-
-                    ? `
-                                        <button
-                                            class="admin-action details"
-                                            data-id="${project.id}"
-                                            data-action="needs_details"
-                                        >
-                                            ? Request More Details
-                                        </button>
-                                      `
-
-                    : ""
-                }
-
-                          `
-
-                : `
-
-                            <span class="project-action-status">
-                                ${escapeHtml(
-                    normalizedStatus
-                )}
-                            </span>
-
-                          `
-            }
-
+                    ${normalizedStatus === "submitted" ? `
+                        <button class="admin-action details" data-id="${project.id}" data-action="needs_details">
+                            ? Request More Details
+                        </button>
+                    ` : ""}
+                ` : `
+                    <span class="project-status status-${normalizedStatus}" style="font-size: 13px;">
+                        Decision: ${escapeHtml(statusDisplay)}
+                    </span>
+                `}
             </div>
         `;
 
-
         adminProjectsList.appendChild(card);
-
     });
-
 }
 
 
-// ========================================
 // HTML Safety
-// ========================================
-
 function escapeHtml(value) {
-
     return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
-
 }
 
 
@@ -599,7 +455,6 @@ function renderMessageBubbleAdmin(msg) {
 }
 
 function appendMessageToAdminChat(msg) {
-    // Avoid duplicate message bubble if already rendered
     if (document.querySelector(`[data-message-id="${msg.id}"]`)) {
         return;
     }
@@ -688,7 +543,6 @@ adminProjectsList.addEventListener("click", (event) => {
         return;
     }
 
-    // Find card elements to extract student name and project title
     const card = messageButton.closest(".project-card");
     const projectTitle = card ? card.querySelector("h3")?.textContent.trim() : "Project";
     const studentNameElem = card ? card.querySelector(".student-detail-grid p") : null;
@@ -698,159 +552,115 @@ adminProjectsList.addEventListener("click", (event) => {
 });
 
 
-// ========================================
-// Logout
-// ========================================
-
-logoutBtn.addEventListener("click", async () => {
-
-    const { error } =
-        await supabaseClient.auth.signOut();
-
+// Logout handlers
+async function handleAdminLogout() {
+    const { error } = await supabaseClient.auth.signOut();
     if (error) {
-
         console.error("Logout error:", error);
-
         return;
     }
-
     window.location.href = "login.html";
+}
 
-});
+if (logoutBtn) logoutBtn.addEventListener("click", handleAdminLogout);
 
+const sidebarAdminLogout = document.getElementById("sidebarAdminLogout");
+if (sidebarAdminLogout) sidebarAdminLogout.addEventListener("click", handleAdminLogout);
 
-// ========================================
+// Mobile Sidebar Toggle
+const mobileToggleBtn = document.getElementById("mobileToggleBtn");
+const appSidebar = document.getElementById("appSidebar");
+if (mobileToggleBtn && appSidebar) {
+    mobileToggleBtn.addEventListener("click", () => {
+        appSidebar.classList.toggle("show-mobile");
+    });
+}
+
+// Search Filter
+const adminSearchInput = document.getElementById("adminSearchInput");
+if (adminSearchInput) {
+    adminSearchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            renderAdminProjects(allAdminProjects);
+            return;
+        }
+
+        const filtered = allAdminProjects.filter(p => {
+            const title = (p.title || "").toLowerCase();
+            const desc = (p.description || "").toLowerCase();
+            const dept = (p.department || "").toLowerCase();
+            const dom = (p.domain || "").toLowerCase();
+            const studName = (p.student?.full_name || "").toLowerCase();
+            const studEmail = (p.student?.email || "").toLowerCase();
+
+            return title.includes(query) || desc.includes(query) || dept.includes(query) || dom.includes(query) || studName.includes(query) || studEmail.includes(query);
+        });
+
+        renderAdminProjects(filtered);
+    });
+}
+
 // Start Admin Dashboard
-// ========================================
-
 async function startAdminDashboard() {
-
     const user = await checkAdmin();
-
-    if (!user) {
-        return;
-    }
-
+    if (!user) return;
     await loadProjects();
-
 }
 
 startAdminDashboard();
 
 
-// ========================================
 // Admin Project Actions
-// ========================================
-
 adminProjectsList.addEventListener("click", async (event) => {
 
-    const button =
-        event.target.closest(".admin-action");
+    const button = event.target.closest(".admin-action");
+    if (!button) return;
 
-    if (!button) {
-        return;
-    }
+    const projectId = button.dataset.id;
+    const newStatus = button.dataset.action;
 
-
-    const projectId =
-        button.dataset.id;
-
-    const newStatus =
-        button.dataset.action;
-
-
-    console.log("Admin action clicked:", {
-        projectId,
-        newStatus
-    });
-
+    console.log("Admin action clicked:", { projectId, newStatus });
 
     let confirmationMessage;
-
-
     if (newStatus === "accepted") {
-
-        confirmationMessage =
-            "Accept this project?";
-
+        confirmationMessage = "Accept this project?";
     } else if (newStatus === "rejected") {
-
-        confirmationMessage =
-            "Reject this project?";
-
+        confirmationMessage = "Reject this project?";
     } else if (newStatus === "needs_details") {
-
-        confirmationMessage =
-            "Request more details from this student?";
-
+        confirmationMessage = "Request more details from this student?";
     }
-
 
     if (!confirm(confirmationMessage)) {
         return;
     }
 
-
     button.disabled = true;
-
     button.textContent = "Updating...";
 
-
-    // ========================================
-    // Update Project Status
-    // ========================================
-
-    const {
-        data: updatedProject,
-        error
-    } = await supabaseClient
+    const { data: updatedProject, error } = await supabaseClient
         .from("projects")
-        .update({
-            status: newStatus
-        })
+        .update({ status: newStatus })
         .eq("id", projectId)
         .select()
         .single();
 
-
     if (error) {
-
-        console.error(
-            "Status update error:",
-            error
-        );
-
-        alert(
-            "Unable to update project.\n\n" +
-            error.message
-        );
-
+        console.error("Status update error:", error);
+        alert("Unable to update project.\n\n" + error.message);
         button.disabled = false;
-
         return;
     }
 
+    console.log("Project updated:", updatedProject);
 
-    console.log(
-        "Project updated:",
-        updatedProject
-    );
-
-
-    // ========================================
-    // Create Notification
-    // ========================================
-
+    // Create Notification if needed
     if (newStatus === "needs_details") {
-
         const notificationMessage =
             `More details are required for your project "${updatedProject.title}". ` +
             `Please review your project and provide the requested information.`;
 
-
-        const {
-            error: notificationError
-        } = await supabaseClient
+        const { error: notificationError } = await supabaseClient
             .from("notifications")
             .insert({
                 user_id: updatedProject.student_id,
@@ -859,34 +669,14 @@ adminProjectsList.addEventListener("click", async (event) => {
                 type: "project_needs_details"
             });
 
-
         if (notificationError) {
-
-            console.error(
-                "Notification creation error:",
-                notificationError
-            );
-
-            alert(
-                "Project status was updated, " +
-                "but the student notification could not be created."
-            );
-
+            console.error("Notification creation error:", notificationError);
+            alert("Project status was updated, but the student notification could not be created.");
         } else {
-
-            console.log(
-                "Student notification created successfully."
-            );
-
+            console.log("Student notification created successfully.");
         }
-
     }
 
-
-    // ========================================
     // Reload Projects
-    // ========================================
-
     await loadProjects();
-
 });
