@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | StudentBuild</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body style="visibility: hidden;">
+
+    <header class="dashboard-header">
+
+        <div class="dashboard-logo">
+            <h2>StudentBuild</h2>
+        </div>
+
+        <div class="dashboard-user">
+
+            <span id="adminName">Loading...</span>
+
+            <button id="logoutBtn">
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <main class="dashboard-container">
+
+        <section class="welcome-section">
+
+            <h1>
+                Admin Dashboard 👨‍💼
+            </h1>
+
+            <p>
+                Manage student projects and review incoming requests.
+            </p>
+
+        </section>
+
+
+        <!-- Statistics -->
+
+        <section class="dashboard-actions">
+
+            <div class="dashboard-action-card">
+
+                <h3>📥 New Requests</h3>
+
+                <h2 id="submittedCount">0</h2>
+
+                <p>
+                    Projects waiting for review.
+                </p>
+
+            </div>
+
+
+            <div class="dashboard-action-card">
+
+                <h3>📁 Total Projects</h3>
+
+                <h2 id="totalCount">0</h2>
+
+                <p>
+                    Projects submitted to StudentBuild.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- Project Requests -->
+
+        <section class="projects-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>Project Requests</h2>
+
+                    <p>
+                        Review projects submitted by students.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div id="adminProjectsList" class="projects-list">
+
+                <div class="empty-projects">
+
+                    <h3>Loading projects...</h3>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Admin Chat Modal -->
+    <div id="adminChatModal" class="chat-modal-overlay">
+        <div class="chat-modal-container">
+            <div class="chat-modal-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar">🎓</div>
+                    <div>
+                        <h3 id="chatModalStudentName">Student Name</h3>
+                        <p id="chatModalProjectTitle" class="chat-project-subtitle">Project Title</p>
+                    </div>
+                </div>
+                <button type="button" id="closeAdminChatBtn" class="chat-close-btn">&times;</button>
+            </div>
+            <div id="adminChatMessagesContainer" class="chat-messages-container">
+                <!-- Messages loaded dynamically -->
+            </div>
+            <form id="adminChatForm" class="chat-input-form">
+                <input type="text" id="adminChatInput" placeholder="Type your message to student..." autocomplete="off" required>
+                <button type="submit" id="sendAdminChatBtn" class="chat-send-btn">
+                    <span>Send</span> 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="supabase-config.js"></script>
+    <script src="admin-dashboard.js"></script>
+
+</body>
+
+</html>

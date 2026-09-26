@@ -1,0 +1,1 @@
+console.log("StudentBuild website loaded successfully.");

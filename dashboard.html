@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | StudentBuild</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body style="visibility: hidden;">
+
+    <!-- Navigation -->
+    <header class="dashboard-header">
+
+        <div class="dashboard-logo">
+            <h2>StudentBuild</h2>
+        </div>
+
+        <div class="dashboard-user">
+            <span id="userName">Loading...</span>
+            <div id="notificationArea"></div>
+            <button id="logoutBtn">Logout</button>
+        </div>
+
+    </header>
+
+
+    <!-- Dashboard -->
+    <main class="dashboard-container">
+
+        <section class="welcome-section">
+
+            <h1>
+                Welcome, <span id="welcomeName">Student</span> 👋
+            </h1>
+
+            <p>
+                Manage your projects and get technical support from StudentBuild.
+            </p>
+
+            <div id="studentProfileBar" class="student-profile-bar" style="margin-top: 16px; display: none; align-items: center; flex-wrap: wrap; gap: 20px; padding: 14px 20px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 14px; color: var(--text-secondary);">
+                <span>👤 <strong style="color: var(--text-primary);">Name:</strong> <span id="profileName"></span></span>
+                <span>📞 <strong style="color: var(--text-primary);">Phone:</strong> <span id="profilePhone" style="color: var(--accent-emerald-light);"></span></span>
+                <span>✉️ <strong style="color: var(--text-primary);">Email:</strong> <span id="profileEmail"></span></span>
+            </div>
+
+        </section>
+
+
+        <!-- Quick Actions -->
+        <section class="dashboard-actions">
+
+            <div class="dashboard-action-card">
+
+                <h3>🚀 Submit a Project</h3>
+
+                <p>
+                    Have a project idea? Tell us about it and our team
+                    will review your requirements.
+                </p>
+
+                <a href="submit-project.html" class="dashboard-button">
+                    Submit Project
+                </a>
+
+            </div>
+
+
+            <div class="dashboard-action-card">
+
+                <h3>📁 My Projects</h3>
+
+                <p>
+                    View your submitted projects and track their current status.
+                </p>
+
+                <a href="#projects" class="dashboard-button secondary">
+                    View Projects
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- Projects -->
+        <section id="projects" class="projects-section">
+
+            <div class="section-heading">
+
+                <div>
+                    <h2>My Projects</h2>
+
+                    <p>
+                        Your submitted projects will appear here.
+                    </p>
+                </div>
+
+                <a href="submit-project.html" class="dashboard-button">
+                    + New Project
+                </a>
+
+            </div>
+
+
+            <div id="projectsList" class="projects-list">
+
+                <div class="empty-projects">
+
+                    <h3>No projects yet</h3>
+
+                    <p>
+                        Submit your first project to get started.
+                    </p>
+
+                    <a href="submit-project.html" class="dashboard-button">
+                        Submit Your Project
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Student Chat Modal -->
+    <div id="studentChatModal" class="chat-modal-overlay">
+        <div class="chat-modal-container">
+            <div class="chat-modal-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar admin-avatar">👨‍💼</div>
+                    <div>
+                        <h3>StudentBuild Technical Support</h3>
+                        <p id="studentChatProjectTitle" class="chat-project-subtitle">Project Title</p>
+                    </div>
+                </div>
+                <button type="button" id="closeStudentChatBtn" class="chat-close-btn">&times;</button>
+            </div>
+            <div id="studentChatMessagesContainer" class="chat-messages-container">
+                <!-- Messages loaded dynamically -->
+            </div>
+            <form id="studentChatForm" class="chat-input-form">
+                <input type="text" id="studentChatInput" placeholder="Type your reply to technical admin..." autocomplete="off" required>
+                <button type="submit" id="sendStudentChatBtn" class="chat-send-btn">
+                    <span>Send</span> 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="supabase-config.js"></script>
+    <script src="dashboard.js"></script>
+
+</body>
+
+</html>

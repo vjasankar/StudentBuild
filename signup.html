@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | StudentBuild</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="auth-container">
+
+        <div class="auth-card">
+
+            <div class="auth-logo">
+                <h1>StudentBuild</h1>
+                <p>Your Project. Our Technical Support.</p>
+            </div>
+
+            <h2>Create Your Account</h2>
+
+            <p class="auth-subtitle">
+                Start your project journey with StudentBuild.
+            </p>
+
+
+            <form id="signupForm">
+
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+
+                    <input type="text" id="fullName" placeholder="Enter your full name" required>
+                </div>
+
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+
+
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+
+                    <input type="tel" id="phone" placeholder="Enter your phone number" pattern="[0-9]{10}"
+                        maxlength="10" required>
+                </div>
+
+
+                <!-- College -->
+                <div class="form-group">
+                    <label for="college">College</label>
+
+                    <input type="text" id="college" placeholder="Enter your college name" required>
+                </div>
+
+
+                <!-- Department -->
+                <div class="form-group">
+                    <label for="department">Department</label>
+
+                    <input type="text" id="department" placeholder="Example: CSE" required>
+                </div>
+
+
+                <!-- Year -->
+                <div class="form-group">
+                    <label for="year">Year</label>
+
+                    <select id="year" required>
+                        <option value="">Select your year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+
+                    <input type="password" id="password" placeholder="Create a password" minlength="6" required>
+                </div>
+
+
+                <!-- Confirm Password -->
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+
+                    <input type="password" id="confirmPassword" placeholder="Re-enter your password" minlength="6"
+                        required>
+                </div>
+
+
+                <p id="signupMessage" class="auth-message"></p>
+
+
+                <button type="submit" class="auth-button">
+                    Create Account
+                </button>
+
+            </form>
+
+
+            <p class="auth-footer">
+                Already have an account?
+                <a href="login.html">Login</a>
+            </p>
+
+
+            <p class="back-home">
+                <a href="index.html">← Back to Home</a>
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="supabase-config.js"></script>
+
+    <script src="signup.js"></script>
+
+</body>
+
+</html>
