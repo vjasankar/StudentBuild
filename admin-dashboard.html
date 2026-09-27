@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | StudentBuild</title>
+    <link rel="icon" type="image/png" href="assets/logo/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,7 +20,7 @@
         <aside id="appSidebar" class="app-sidebar">
             <div>
                 <div class="sidebar-brand">
-                    <div class="brand-icon">S</div>
+                    <img src="assets/logo/studentbuild-mark.png" alt="StudentBuild" class="sidebar-logo-img">
                     <div class="brand-info">
                         <span class="brand-title">StudentBuild</span>
                         <span class="brand-tagline">Admin Technical Portal</span>
@@ -29,28 +30,28 @@
                 <nav class="sidebar-nav">
                     <a href="admin-dashboard.html" class="nav-link active">
                         <div class="nav-link-content">
-                            <span class="nav-icon">📊</span>
+                            <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                             <span>Admin Overview</span>
                         </div>
                     </a>
 
                     <a href="#requests" class="nav-link">
                         <div class="nav-link-content">
-                            <span class="nav-icon">📥</span>
+                            <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
                             <span>Project Requests</span>
                         </div>
                     </a>
 
                     <a href="javascript:void(0)" id="sidebarAdminMsgLink" class="nav-link">
                         <div class="nav-link-content">
-                            <span class="nav-icon">💬</span>
+                            <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             <span>Student Messages</span>
                         </div>
                     </a>
 
-                    <a href="javascript:void(0)" id="sidebarAdminLogout" class="nav-link" style="margin-top: 20px; color: #ef4444;">
+                    <a href="javascript:void(0)" id="sidebarAdminLogout" class="nav-link" style="margin-top: 20px; color: var(--status-ruby);">
                         <div class="nav-link-content">
-                            <span class="nav-icon">🚪</span>
+                            <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                             <span>Logout</span>
                         </div>
                     </a>
@@ -74,7 +75,9 @@
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <button type="button" id="mobileToggleBtn" class="mobile-toggle-btn">☰</button>
                     <div class="header-search">
-                        <span class="search-icon-inside">🔍</span>
+                        <span class="search-icon-inside">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </span>
                         <input type="text" id="adminSearchInput" placeholder="Search student projects, emails, colleges...">
                     </div>
                 </div>
@@ -82,7 +85,7 @@
                 <div class="header-right">
                     <!-- Profile Badge -->
                     <div class="header-profile-badge">
-                        <div class="profile-avatar-circle" style="background: var(--accent-coral);">A</div>
+                        <div class="profile-avatar-circle" style="background: var(--gradient-gold); color: #050505;">A</div>
                         <div class="profile-info-mini">
                             <span id="adminName" class="profile-name-mini">Admin</span>
                             <span class="profile-sub-mini">Technical Administrator</span>
@@ -99,42 +102,50 @@
                 <!-- Welcome Header -->
                 <div class="welcome-header-row">
                     <div class="welcome-text-group">
-                        <h1>Admin Dashboard 👨‍💼</h1>
-                        <p>Manage student projects, review incoming requests, and communicate with student developers.</p>
+                        <h1>Admin Portal 👨‍💼</h1>
+                        <p>Manage student projects, review incoming technical requests, and communicate with student developers.</p>
                     </div>
                 </div>
 
                 <!-- STATISTICS CARDS GRID -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper amber">📥</div>
-                        <div class="stat-info">
-                            <span id="submittedCount" class="stat-value">0</span>
-                            <span class="stat-label">New Requests</span>
+                        <div class="stat-card-left">
+                            <div class="stat-icon-wrapper amber">📥</div>
+                            <div class="stat-info">
+                                <span id="submittedCount" class="stat-value">0</span>
+                                <span class="stat-label">New Requests</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper green">📁</div>
-                        <div class="stat-info">
-                            <span id="totalCount" class="stat-value">0</span>
-                            <span class="stat-label">Total Submissions</span>
+                        <div class="stat-card-left">
+                            <div class="stat-icon-wrapper purple">📁</div>
+                            <div class="stat-info">
+                                <span id="totalCount" class="stat-value">0</span>
+                                <span class="stat-label">Total Submissions</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper purple">✓</div>
-                        <div class="stat-info">
-                            <span id="adminAcceptedCount" class="stat-value">0</span>
-                            <span class="stat-label">Accepted</span>
+                        <div class="stat-card-left">
+                            <div class="stat-icon-wrapper green">✓</div>
+                            <div class="stat-info">
+                                <span id="adminAcceptedCount" class="stat-value">0</span>
+                                <span class="stat-label">Accepted</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="stat-card">
-                        <div class="stat-icon-wrapper red">✕</div>
-                        <div class="stat-info">
-                            <span id="adminRejectedCount" class="stat-value">0</span>
-                            <span class="stat-label">Rejected / Needs Details</span>
+                        <div class="stat-card-left">
+                            <div class="stat-icon-wrapper red">✕</div>
+                            <div class="stat-info">
+                                <span id="adminRejectedCount" class="stat-value">0</span>
+                                <span class="stat-label">Needs Details / Rejected</span>
+                            </div>
                         </div>
                     </div>
                 </div>

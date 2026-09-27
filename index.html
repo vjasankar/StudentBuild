@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StudentBuild | Your Project. Our Technical Support.</title>
+    <link rel="icon" type="image/png" href="assets/logo/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,11 +14,12 @@
 <body>
 
     <!-- Navigation -->
-    <header class="navbar">
+    <header class="navbar" id="mainNavbar">
 
         <div class="logo">
-            <div class="brand-icon" style="width: 32px; height: 32px; font-size: 16px;">S</div>
-            StudentBuild
+            <a href="index.html">
+                <img src="assets/logo/studentbuild-horizontal.png" alt="StudentBuild Logo" style="height: 38px; width: auto; object-fit: contain;">
+            </a>
         </div>
 
         <nav>
@@ -41,30 +43,33 @@
 
         <div class="hero-content">
 
-            <p class="eyebrow">
+            <div class="hero-logo-badge" style="animation: heroFadeUp 0.5s ease-out 0ms both;">
+                <img src="assets/logo/studentbuild-horizontal.png" alt="StudentBuild" style="height: 44px; width: auto; object-fit: contain;">
+            </div>
+
+            <p class="eyebrow" style="animation: heroFadeUp 0.5s ease-out 80ms both;">
                 TECHNICAL SUPPORT FOR STUDENT PROJECTS
             </p>
 
-            <h1>
+            <h1 style="animation: heroFadeUp 0.5s ease-out 140ms both;">
                 Your Project.<br>
                 <span>Our Technical Support.</span>
             </h1>
 
-            <p class="hero-description">
+            <p class="hero-description" style="animation: heroFadeUp 0.5s ease-out 220ms both;">
                 Have a project idea but need technical support?
                 StudentBuild helps students transform their ideas
-                into working prototypes through technical development,
-                guidance, and testing.
+                into working solutions with technical guidance and development support.
             </p>
 
-            <div class="hero-buttons">
+            <div class="hero-buttons" style="animation: heroFadeUp 0.5s ease-out 300ms both;">
 
                 <a href="submit-project.html" class="btn btn-primary btn-large">
                     Submit Your Project 🚀
                 </a>
 
-                <a href="#services" class="btn btn-outline btn-large">
-                    Explore Services
+                <a href="#how-it-works" class="btn btn-outline btn-large">
+                    Explore How It Works
                 </a>
 
             </div>
@@ -156,7 +161,7 @@
 
 
     <!-- How It Works -->
-    <section id="how-it-works" class="section section-light">
+    <section id="how-it-works" class="section">
 
         <div class="section-heading">
 
@@ -269,10 +274,10 @@
     <footer id="contact">
 
         <div class="footer-logo">
-            StudentBuild
+            <img src="assets/logo/studentbuild-horizontal.png" alt="StudentBuild" style="height: 32px; width: auto; object-fit: contain;">
         </div>
 
-        <p>
+        <p style="margin-top: 8px;">
             Your Project. Our Technical Support.
         </p>
 
@@ -283,7 +288,17 @@
     </footer>
 
 
-    <script src="script.js"></script>
+    <script>
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('mainNavbar');
+            if (window.scrollY > 30) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+    </script>
 
 </body>
 

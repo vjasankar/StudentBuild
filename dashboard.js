@@ -5,6 +5,7 @@ const projectsList = document.getElementById("projectsList");
 
 let currentStudentUser = null;
 let currentStudentProfile = null;
+let allStudentProjects = [];
 
 async function loadDashboard() {
 
@@ -13,13 +14,11 @@ async function loadDashboard() {
         error: userError
     } = await supabaseClient.auth.getUser();
 
-    // No logged-in user
     if (userError || !user) {
         window.location.href = "login.html";
         return;
     }
 
-    // Get user profile including phone, college, department, year
     const { data: profile, error: profileError } =
         await supabaseClient
             .from("profiles")
@@ -27,26 +26,20 @@ async function loadDashboard() {
             .eq("id", user.id)
             .single();
 
-    // Profile could not be loaded
     if (profileError || !profile) {
         console.error("Profile error:", profileError);
-
         if (userName) userName.textContent = user.email || "Student";
         if (welcomeName) welcomeName.textContent = "Student";
-
         document.body.style.visibility = "visible";
         return;
     }
 
-    // Admin should use the admin dashboard
     if (profile.role === "admin") {
         window.location.href = "admin-dashboard.html";
         return;
     }
 
-    // Display student name and profile info
     const name = profile.full_name || "Student";
-
     if (userName) userName.textContent = name;
     if (welcomeName) welcomeName.textContent = name;
 
@@ -57,9 +50,8 @@ async function loadDashboard() {
 
     const userSubDetail = document.getElementById("userSubDetail");
     if (userSubDetail) {
-        const yrText = profile.year ? `${profile.year}${getOrdinalSuffix(profile.year)} Year` : "Student";
-        const deptText = profile.department ? profile.department : "";
-        userSubDetail.textContent = deptText ? `${yrText} · ${deptText}` : yrText;
+        const yrText = profile.year ? `${profile.year}th Year` : "Student";
+        userSubDetail.textContent = profile.department ? `${yrText} · ${profile.department}` : yrText;
     }
 
     const profileBar = document.getElementById("studentProfileBar");
@@ -73,31 +65,20 @@ async function loadDashboard() {
         profileBar.style.display = "flex";
     }
 
-    // Store student user & profile
     currentStudentUser = user;
     currentStudentProfile = profile;
 
-    // Set today's date formatted in header widget
     const currentDateText = document.getElementById("currentDateText");
     if (currentDateText) {
         const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
         currentDateText.textContent = new Date().toLocaleDateString('en-GB', options);
     }
 
-    // Load student's projects and unread message counts
     await loadProjects(user.id);
     await loadNotifications(user.id);
     await loadRecentMessagesWidget(user.id);
 
     document.body.style.visibility = "visible";
-}
-
-function getOrdinalSuffix(i) {
-    const j = i % 10, k = i % 100;
-    if (j === 1 && k !== 11) return "st";
-    if (j === 2 && k !== 12) return "nd";
-    if (j === 3 && k !== 13) return "rd";
-    return "th";
 }
 
 // Load student's projects
@@ -109,13 +90,7 @@ async function loadProjects(userId) {
             .select(`
                 *,
                 student:profiles!projects_student_id_fkey (
-                    id,
-                    full_name,
-                    email,
-                    phone,
-                    college,
-                    department,
-                    year
+                    id, full_name, email, phone, college, department, year
                 )
             `)
             .eq("student_id", userId)
@@ -137,196 +112,220 @@ async function loadProjects(userId) {
         projects = fallbackProjects;
     }
 
-    // Update Stat Counters
-    const totalCount = projects ? projects.length : 0;
+    allStudentProjects = projects || [];
+
+    // Stat Counters
+    const totalCount = allStudentProjects.length;
     let inReviewCount = 0;
     let acceptedCount = 0;
     let rejectedCount = 0;
 
-    if (projects) {
-        projects.forEach(p => {
-            const st = String(p.status || "").trim().toLowerCase();
-            if (st === "accepted") acceptedCount++;
-            else if (st === "rejected") rejectedCount++;
-            else inReviewCount++;
-        });
-    }
+    allStudentProjects.forEach(p => {
+        const st = String(p.status || "").trim().toLowerCase();
+        if (st === "accepted") acceptedCount++;
+        else if (st === "rejected") rejectedCount++;
+        else inReviewCount++;
+    });
 
     const statTotalProjects = document.getElementById("statTotalProjects");
     const statInReview = document.getElementById("statInReview");
     const statAccepted = document.getElementById("statAccepted");
     const statRejected = document.getElementById("statRejected");
 
-    if (statTotalProjects) statTotalProjects.textContent = totalCount;
-    if (statInReview) statInReview.textContent = inReviewCount;
-    if (statAccepted) statAccepted.textContent = acceptedCount;
-    if (statRejected) statRejected.textContent = rejectedCount;
+    function animateStatNumber(elem, targetVal, duration = 650) {
+        if (!elem) return;
+        const end = parseInt(targetVal) || 0;
+        if (end === 0) { elem.textContent = "0"; return; }
+        const startTime = performance.now();
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            elem.textContent = Math.floor(progress * end);
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            } else {
+                elem.textContent = end;
+            }
+        }
+        requestAnimationFrame(updateCounter);
+    }
 
-    // Update Upcoming Deadline Widget
-    updateDeadlineWidget(projects);
+    if (statTotalProjects) animateStatNumber(statTotalProjects, totalCount);
+    if (statInReview) animateStatNumber(statInReview, inReviewCount);
+    if (statAccepted) animateStatNumber(statAccepted, acceptedCount);
+    if (statRejected) animateStatNumber(statRejected, rejectedCount);
 
-    // Update Recent Activity Widget
-    updateRecentActivityWidget(projects);
+    updateDeadlineWidget(allStudentProjects);
+    updateRecentActivityWidget(allStudentProjects);
+    renderDashboardProjects(allStudentProjects);
+}
 
-    // No projects
-    if (!projects || projects.length === 0) {
+function renderDashboardProjects(projects) {
+    const searchVal = (document.getElementById("dashboardSearchInput")?.value || "").toLowerCase().trim();
 
+    const filtered = projects.filter(p => {
+        if (!searchVal) return true;
+        const title = (p.title || "").toLowerCase();
+        const desc = (p.description || "").toLowerCase();
+        const dom = (p.domain || "").toLowerCase();
+        const dept = (p.department || "").toLowerCase();
+        return title.includes(searchVal) || desc.includes(searchVal) || dom.includes(searchVal) || dept.includes(searchVal);
+    });
+
+    if (filtered.length === 0) {
         projectsList.innerHTML = `
             <div class="empty-projects">
-
-                <h3>No projects yet</h3>
-
-                <p>
-                    Submit your first project to get started with StudentBuild technical support.
-                </p>
-
-                <a href="submit-project.html" class="btn-new-project">
-                    Submit Your Project
-                </a>
-
+                <img src="assets/illustrations/empty-projects.png" alt="No Projects" class="empty-state-img">
+                <h3>${allStudentProjects.length === 0 ? "No projects yet" : "No matching projects"}</h3>
+                <p>${allStudentProjects.length === 0 ? "Submit your first project to get started with StudentBuild technical support." : "Try adjusting your search query."}</p>
+                ${allStudentProjects.length === 0 ? `<a href="submit-project.html" class="btn-sidebar-cta" style="display: inline-flex; width: auto; margin-top: 14px; padding: 10px 24px;">+ Submit Your Project</a>` : ""}
             </div>
         `;
-
         return;
     }
 
-    // Fetch unread message counts for all student's projects
-    const { data: unreadMessages } = await supabaseClient
+    // Fetch unread message counts
+    supabaseClient
         .from("messages")
         .select("id, project_id")
-        .eq("receiver_id", userId)
-        .eq("is_read", false);
+        .eq("receiver_id", currentStudentUser.id)
+        .eq("is_read", false)
+        .then(({ data: unreadMessages }) => {
+            const unreadCountByProject = {};
+            if (unreadMessages) {
+                unreadMessages.forEach(msg => {
+                    unreadCountByProject[msg.project_id] = (unreadCountByProject[msg.project_id] || 0) + 1;
+                });
+            }
 
-    const unreadCountByProject = {};
-    if (unreadMessages) {
-        unreadMessages.forEach(msg => {
-            unreadCountByProject[msg.project_id] = (unreadCountByProject[msg.project_id] || 0) + 1;
+            projectsList.innerHTML = "";
+
+            filtered.forEach(project => {
+                const projectCard = document.createElement("div");
+                projectCard.className = "project-card";
+
+                const rawStatus = String(project.status || "").trim().replace(/^['"]|['"]$/g, "").toLowerCase();
+                let statusText = "In Review";
+                if (rawStatus === "accepted") statusText = "Accepted";
+                else if (rawStatus === "rejected") statusText = "Rejected";
+                else if (rawStatus === "needs_details") statusText = "Needs Details";
+
+                const unreadCount = unreadCountByProject[project.id] || 0;
+                const student = project.student || currentStudentProfile || {};
+                const studentName = student.full_name || currentStudentProfile?.full_name || "Student";
+                const studentPhone = student.phone || currentStudentProfile?.phone || "Not provided";
+                const studentEmail = student.email || currentStudentProfile?.email || (currentStudentUser ? currentStudentUser.email : "");
+
+                let domainIcon = "📁";
+                let domainIconClass = "teal";
+                const domLower = String(project.domain || "").toLowerCase();
+                if (domLower.includes("iot")) { domainIcon = "📶"; domainIconClass = "green"; }
+                else if (domLower.includes("ai") || domLower.includes("ml")) { domainIcon = "🌿"; domainIconClass = "purple"; }
+                else if (domLower.includes("web")) { domainIcon = "💻"; domainIconClass = "coral"; }
+                else if (domLower.includes("app")) { domainIcon = "📱"; domainIconClass = "teal"; }
+
+                const dateFormatted = project.created_at
+                    ? new Date(project.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })
+                    : "Recently";
+
+                projectCard.innerHTML = `
+                    <div class="project-card-header">
+                        <div class="project-card-main-info">
+                            <div class="project-domain-icon-box ${domainIconClass}">
+                                ${domainIcon}
+                            </div>
+                            <div class="project-title-group">
+                                <h3>${escapeHtml(project.title)}</h3>
+                                <p>${escapeHtml(project.description)}</p>
+                            </div>
+                        </div>
+
+                        <div class="project-status-group">
+                            <span class="project-status status-${rawStatus}">
+                                ${escapeHtml(statusText)}
+                            </span>
+                            <span class="project-date-text">Submitted ${dateFormatted}</span>
+                        </div>
+                    </div>
+
+                    <div class="project-tags-row">
+                        <span class="project-tag">${escapeHtml(project.domain || "Technical")}</span>
+                        <span class="project-tag">${escapeHtml(project.project_type || "Prototype")}</span>
+                        <span class="project-tag">${escapeHtml(project.department || "Engineering")}</span>
+                        ${project.budget_range ? `<span class="project-tag" style="color: var(--accent-coral);">Budget: ${escapeHtml(project.budget_range)}</span>` : ''}
+                    </div>
+
+                    <div class="student-details">
+                        <h4>Contact Details</h4>
+                        <div class="student-detail-grid">
+                            <p><strong>Name:</strong> ${escapeHtml(studentName)}</p>
+                            <p><strong>Phone:</strong> ${escapeHtml(studentPhone)}</p>
+                            ${studentEmail ? `<p><strong>Email:</strong> ${escapeHtml(studentEmail)}</p>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="project-card-actions">
+                        <button type="button" class="contact-button message student-chat-btn" data-project-id="${project.id}" data-project-title="${escapeHtml(project.title)}">
+                            Messages ${unreadCount > 0 ? `<span class="unread-count-badge" id="unread-badge-${project.id}">${unreadCount}</span>` : `<span class="unread-count-badge" id="unread-badge-${project.id}"></span>`} 💬
+                        </button>
+                    </div>
+                `;
+
+                projectsList.appendChild(projectCard);
+            });
         });
-    }
+}
 
-    // Display projects
-    projectsList.innerHTML = "";
-
-    projects.forEach(project => {
-
-        const projectCard = document.createElement("div");
-        projectCard.className = "project-card";
-
-        const rawStatus = String(project.status || "").trim().replace(/^['"]|['"]$/g, "").toLowerCase();
-        let statusText = "In Review";
-        if (rawStatus === "accepted") statusText = "Accepted";
-        else if (rawStatus === "rejected") statusText = "Rejected";
-        else if (rawStatus === "needs_details") statusText = "Needs Details";
-
-        const unreadCount = unreadCountByProject[project.id] || 0;
-
-        const student = project.student || currentStudentProfile || {};
-        const studentName = student.full_name || currentStudentProfile?.full_name || "Student";
-        const studentPhone = student.phone || currentStudentProfile?.phone || "Not provided";
-        const studentEmail = student.email || currentStudentProfile?.email || (currentStudentUser ? currentStudentUser.email : "");
-
-        // Determine Domain Icon & Styling
-        let domainIcon = "📁";
-        let domainIconClass = "teal";
-
-        const domLower = String(project.domain || "").toLowerCase();
-        if (domLower.includes("iot")) {
-            domainIcon = "📶";
-            domainIconClass = "green";
-        } else if (domLower.includes("ai") || domLower.includes("ml") || domLower.includes("machine")) {
-            domainIcon = "🌿";
-            domainIconClass = "purple";
-        } else if (domLower.includes("web")) {
-            domainIcon = "💻";
-            domainIconClass = "coral";
-        } else if (domLower.includes("app")) {
-            domainIcon = "📱";
-            domainIconClass = "teal";
-        } else if (domLower.includes("data")) {
-            domainIcon = "📊";
-            domainIconClass = "purple";
-        } else if (domLower.includes("embedded")) {
-            domainIcon = "⚡";
-            domainIconClass = "coral";
-        }
-
-        const dateFormatted = project.created_at
-            ? new Date(project.created_at).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })
-            : "Recently";
-
-        projectCard.innerHTML = `
-            <div class="project-card-header">
-                <div class="project-card-main-info">
-                    <div class="project-domain-icon-box ${domainIconClass}">
-                        ${domainIcon}
-                    </div>
-                    <div class="project-title-group">
-                        <h3>${escapeHtml(project.title)}</h3>
-                        <p>${escapeHtml(project.description)}</p>
-                    </div>
-                </div>
-
-                <div class="project-status-group">
-                    <span class="project-status status-${rawStatus}">
-                        ${escapeHtml(statusText)}
-                    </span>
-                    <span class="project-date-text">Submitted on ${dateFormatted}</span>
-                </div>
-            </div>
-
-            <div class="project-tags-row">
-                <span class="project-tag">${escapeHtml(project.domain || "Technical")}</span>
-                <span class="project-tag">${escapeHtml(project.project_type || "Prototype")}</span>
-                <span class="project-tag">${escapeHtml(project.department || "Engineering")}</span>
-                ${project.budget_range ? `<span class="project-tag" style="color: var(--accent-coral);">Budget: ${escapeHtml(project.budget_range)}</span>` : ''}
-            </div>
-
-            <div class="student-details">
-                <h4>👤 Student Contact Info</h4>
-                <div class="student-detail-grid">
-                    <p><strong>Name:</strong> ${escapeHtml(studentName)}</p>
-                    <p><strong>Phone:</strong> ${escapeHtml(studentPhone)}</p>
-                    ${studentEmail ? `<p><strong>Email:</strong> ${escapeHtml(studentEmail)}</p>` : ''}
-                </div>
-            </div>
-
-            <div class="project-card-actions">
-                <button type="button" class="contact-button message student-chat-btn" data-project-id="${project.id}" data-project-title="${escapeHtml(project.title)}">
-                    💬 Messages ${unreadCount > 0 ? `<span class="unread-count-badge" id="unread-badge-${project.id}">${unreadCount}</span>` : `<span class="unread-count-badge" id="unread-badge-${project.id}"></span>`}
-                </button>
-            </div>
-        `;
-
-        projectsList.appendChild(projectCard);
-
+// Search input listener
+const dashboardSearchInput = document.getElementById("dashboardSearchInput");
+if (dashboardSearchInput) {
+    dashboardSearchInput.addEventListener("input", () => {
+        renderDashboardProjects(allStudentProjects);
     });
-
 }
 
 // Helper: Update Upcoming Deadline Widget
 function updateDeadlineWidget(projects) {
-    const deadlineProjectTitle = document.getElementById("deadlineProjectTitle");
-    const deadlineDateText = document.getElementById("deadlineDateText");
+    const deadlineWidgetCard = document.getElementById("upcomingDeadlineWidget");
+    if (!deadlineWidgetCard) return;
 
-    if (!deadlineProjectTitle || !deadlineDateText) return;
+    const contentArea = document.getElementById("deadlineCardContent");
+    if (!contentArea) return;
 
     if (!projects || projects.length === 0) {
-        deadlineProjectTitle.textContent = "No upcoming deadlines";
-        deadlineDateText.textContent = "Submit a project to set dates";
+        contentArea.innerHTML = `
+            <div>
+                <div class="deadline-title" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">No upcoming deadlines</div>
+                <div class="deadline-date" style="font-size: 11.5px; color: var(--text-muted);">Submit a project to set dates</div>
+            </div>
+            <span style="color: var(--text-muted); font-size: 14px;">➔</span>
+        `;
         return;
     }
 
-    const projectsWithDeadline = projects.filter(p => p.deadline).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    const projectsListShow = projects.slice(0, 2);
+    contentArea.innerHTML = projectsListShow.map(p => {
+        const d = p.deadline ? new Date(p.deadline) : null;
+        const dateStr = (d && !isNaN(d)) ? d.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' }) : "In Review";
+        const budgetStr = p.budget_range ? ` • ${escapeHtml(p.budget_range)}` : "";
+        const st = String(p.status || "").trim().toLowerCase();
+        let dotColor = "#E3A84B";
+        if (st === "accepted") dotColor = "#4CCB91";
+        else if (st === "rejected") dotColor = "#E76A6A";
 
-    if (projectsWithDeadline.length > 0) {
-        const topDeadline = projectsWithDeadline[0];
-        deadlineProjectTitle.textContent = topDeadline.title;
-        const d = new Date(topDeadline.deadline);
-        deadlineDateText.textContent = isNaN(d) ? topDeadline.deadline : d.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
-    } else {
-        deadlineProjectTitle.textContent = projects[0].title;
-        deadlineDateText.textContent = "In Review";
-    }
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: ${dotColor}; display: inline-block; flex-shrink: 0;"></span>
+                    <div>
+                        <div class="deadline-title" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">${escapeHtml(p.title)}</div>
+                        <div class="deadline-date" style="font-size: 11.5px; color: var(--text-muted);">${dateStr}${budgetStr}</div>
+                    </div>
+                </div>
+                <span style="color: var(--text-muted); font-size: 13px;">❯</span>
+            </div>
+        `;
+    }).join("");
 }
 
 // Helper: Update Recent Activity Widget
@@ -426,7 +425,7 @@ async function loadRecentMessagesWidget(userId) {
         `;
 
         div.addEventListener("click", () => {
-            openStudentChat(msg.project_id, projTitle);
+            window.location.href = "messages.html";
         });
 
         listElem.appendChild(div);
@@ -446,7 +445,6 @@ function getRelativeTimeString(date) {
     return date.toLocaleDateString("en-GB", { day: '2-digit', month: 'short' });
 }
 
-// Basic HTML escaping
 function escapeHtml(value) {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -456,74 +454,45 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-// Logout handler
+// Logout Handlers
 async function handleLogout() {
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-        console.error("Logout error:", error);
-        return;
-    }
+    await supabaseClient.auth.signOut();
     window.location.href = "login.html";
 }
 
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-}
+if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
+
+const dropdownLogoutBtn = document.getElementById("dropdownLogoutBtn");
+if (dropdownLogoutBtn) dropdownLogoutBtn.addEventListener("click", handleLogout);
 
 const sidebarLogoutLink = document.getElementById("sidebarLogoutLink");
-if (sidebarLogoutLink) {
-    sidebarLogoutLink.addEventListener("click", handleLogout);
-}
+if (sidebarLogoutLink) sidebarLogoutLink.addEventListener("click", handleLogout);
 
-// Mobile sidebar toggle
+// Mobile Sidebar Toggle
 const mobileToggleBtn = document.getElementById("mobileToggleBtn");
 const appSidebar = document.getElementById("appSidebar");
 if (mobileToggleBtn && appSidebar) {
-    mobileToggleBtn.addEventListener("click", () => {
-        appSidebar.classList.toggle("show-mobile");
+    mobileToggleBtn.addEventListener("click", () => appSidebar.classList.toggle("show-mobile"));
+}
+
+// Profile Dropdown Toggle
+const headerProfileDropdownToggle = document.getElementById("headerProfileDropdownToggle");
+const profileDropdownMenu = document.getElementById("profileDropdownMenu");
+if (headerProfileDropdownToggle && profileDropdownMenu) {
+    headerProfileDropdownToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileDropdownMenu.classList.toggle("show");
     });
+    document.addEventListener("click", () => profileDropdownMenu.classList.remove("show"));
 }
-
-// Contact Support Button
-const contactSupportBtn = document.getElementById("contactSupportBtn");
-if (contactSupportBtn) {
-    contactSupportBtn.addEventListener("click", async () => {
-        // Open chat for first project or fallback
-        const { data: projects } = await supabaseClient
-            .from("projects")
-            .select("id, title")
-            .limit(1);
-
-        if (projects && projects.length > 0) {
-            openStudentChat(projects[0].id, projects[0].title);
-        } else {
-            alert("Please submit a project first to contact support.");
-        }
-    });
-}
-
-// View All Messages
-const viewAllMessagesBtn = document.getElementById("viewAllMessagesBtn");
-const sidebarMessagesLink = document.getElementById("sidebarMessagesLink");
-function openFirstProjectChat() {
-    const firstChatBtn = document.querySelector(".student-chat-btn");
-    if (firstChatBtn) {
-        firstChatBtn.click();
-    } else {
-        alert("No active project messages yet. Submit a project to start chatting.");
-    }
-}
-if (viewAllMessagesBtn) viewAllMessagesBtn.addEventListener("click", openFirstProjectChat);
-if (sidebarMessagesLink) sidebarMessagesLink.addEventListener("click", openFirstProjectChat);
 
 // ========================================
-// Student Chat & Messaging System
+// Student Chat Modal Logic
 // ========================================
 
 let activeStudentChatProjectId = null;
 let activeStudentChatProjectTitle = "";
 let activeStudentChatAdminId = null;
-let studentChatRealtimeChannel = null;
 
 const studentChatModal = document.getElementById("studentChatModal");
 const studentChatProjectTitle = document.getElementById("studentChatProjectTitle");
@@ -532,28 +501,6 @@ const studentChatForm = document.getElementById("studentChatForm");
 const studentChatInput = document.getElementById("studentChatInput");
 const sendStudentChatBtn = document.getElementById("sendStudentChatBtn");
 const closeStudentChatBtn = document.getElementById("closeStudentChatBtn");
-
-async function getAdminId() {
-    if (activeStudentChatAdminId) return activeStudentChatAdminId;
-
-    try {
-        const { data: adminProf } = await supabaseClient
-            .from("profiles")
-            .select("id")
-            .eq("role", "admin")
-            .limit(1)
-            .single();
-
-        if (adminProf) {
-            activeStudentChatAdminId = adminProf.id;
-            return adminProf.id;
-        }
-    } catch (err) {
-        console.warn("Could not query admin profile directly:", err);
-    }
-
-    return null;
-}
 
 async function openStudentChat(projectId, projectTitle) {
     if (!currentStudentUser) {
@@ -565,359 +512,115 @@ async function openStudentChat(projectId, projectTitle) {
     activeStudentChatProjectId = projectId;
     activeStudentChatProjectTitle = projectTitle || "Project";
 
-    if (studentChatProjectTitle) {
-        studentChatProjectTitle.textContent = `Project: ${activeStudentChatProjectTitle}`;
-    }
+    if (studentChatProjectTitle) studentChatProjectTitle.textContent = `Project: ${activeStudentChatProjectTitle}`;
+    if (studentChatModal) studentChatModal.classList.add("active");
 
-    if (studentChatModal) {
-        studentChatModal.classList.add("active");
-    }
-
-    await getAdminId();
     await loadStudentChatMessages();
-    await markStudentMessagesAsRead(projectId);
-
-    // Clear unread badge in UI
-    const badge = document.getElementById(`unread-badge-${projectId}`);
-    if (badge) {
-        badge.textContent = "";
-        badge.style.display = "none";
-    }
-
-    // Subscribe to Realtime messages for this project
-    if (studentChatRealtimeChannel) {
-        supabaseClient.removeChannel(studentChatRealtimeChannel);
-    }
-
-    try {
-        studentChatRealtimeChannel = supabaseClient
-            .channel(`student-chat-${projectId}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "messages",
-                    filter: `project_id=eq.${projectId}`
-                },
-                (payload) => {
-                    const newMsg = payload.new;
-                    appendMessageToStudentChat(newMsg);
-                    if (newMsg.receiver_id === currentStudentUser.id) {
-                        markStudentMessagesAsRead(projectId);
-                    }
-                }
-            )
-            .subscribe();
-    } catch (rtErr) {
-        console.warn("Realtime subscription note:", rtErr);
-    }
 }
 
 function closeStudentChat() {
-    if (studentChatModal) {
-        studentChatModal.classList.remove("active");
-    }
+    if (studentChatModal) studentChatModal.classList.remove("active");
     activeStudentChatProjectId = null;
-
-    if (studentChatRealtimeChannel) {
-        supabaseClient.removeChannel(studentChatRealtimeChannel);
-        studentChatRealtimeChannel = null;
-    }
 }
 
-if (closeStudentChatBtn) {
-    closeStudentChatBtn.addEventListener("click", closeStudentChat);
-}
-
-if (studentChatModal) {
-    studentChatModal.addEventListener("click", (e) => {
-        if (e.target === studentChatModal) {
-            closeStudentChat();
-        }
-    });
-}
-
-async function markStudentMessagesAsRead(projectId) {
-    if (!currentStudentUser || !projectId) return;
-
-    try {
-        await supabaseClient
-            .from("messages")
-            .update({ is_read: true })
-            .eq("project_id", projectId)
-            .eq("receiver_id", currentStudentUser.id)
-            .eq("is_read", false);
-    } catch (err) {
-        console.error("Error marking student messages read:", err);
-    }
-}
+if (closeStudentChatBtn) closeStudentChatBtn.addEventListener("click", closeStudentChat);
+if (studentChatModal) studentChatModal.addEventListener("click", (e) => { if (e.target === studentChatModal) closeStudentChat(); });
 
 async function loadStudentChatMessages() {
     if (!activeStudentChatProjectId) return;
+    studentChatMessagesContainer.innerHTML = `<div class="chat-empty-state"><p>Loading messages...</p></div>`;
 
-    studentChatMessagesContainer.innerHTML = `
-        <div class="chat-empty-state">
-            <span>⌛</span>
-            <p>Loading conversation...</p>
-        </div>
-    `;
-
-    const { data: messages, error } = await supabaseClient
+    const { data: messages } = await supabaseClient
         .from("messages")
         .select("*")
         .eq("project_id", activeStudentChatProjectId)
         .order("created_at", { ascending: true });
 
-    if (error) {
-        console.error("Error loading student chat messages:", error);
-        studentChatMessagesContainer.innerHTML = `
-            <div class="chat-empty-state">
-                <span>⚠️</span>
-                <p>Unable to load messages. Please try again.</p>
-            </div>
-        `;
-        return;
-    }
-
     if (!messages || messages.length === 0) {
-        studentChatMessagesContainer.innerHTML = `
-            <div class="chat-empty-state">
-                <span>💬</span>
-                <p>No messages yet. Ask our Technical Support team anything!</p>
-            </div>
-        `;
+        studentChatMessagesContainer.innerHTML = `<div class="chat-empty-state"><p>No messages yet. Ask technical support anything!</p></div>`;
         return;
-    }
-
-    // Try detecting admin ID from existing messages if needed
-    if (!activeStudentChatAdminId) {
-        const adminMsg = messages.find(m => m.sender_id !== currentStudentUser.id);
-        if (adminMsg) {
-            activeStudentChatAdminId = adminMsg.sender_id;
-        }
     }
 
     studentChatMessagesContainer.innerHTML = "";
-    messages.forEach((msg) => {
-        renderMessageBubbleStudent(msg);
+    messages.forEach(msg => {
+        const isSelf = currentStudentUser && msg.sender_id === currentStudentUser.id;
+        const bubble = document.createElement("div");
+        bubble.className = `message-bubble ${isSelf ? "sent" : "received"}`;
+        bubble.innerHTML = `
+            <div class="message-sender-tag">${isSelf ? "You" : "Technical Support Admin"}</div>
+            <div class="message-text">${escapeHtml(msg.message)}</div>
+            <div class="message-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
+        `;
+        studentChatMessagesContainer.appendChild(bubble);
     });
-
     studentChatMessagesContainer.scrollTop = studentChatMessagesContainer.scrollHeight;
-}
-
-function renderMessageBubbleStudent(msg) {
-    const isSentByStudent = currentStudentUser && msg.sender_id === currentStudentUser.id;
-    const bubble = document.createElement("div");
-    bubble.className = `message-bubble ${isSentByStudent ? "sent" : "received"}`;
-    bubble.dataset.messageId = msg.id;
-
-    const timeStr = msg.created_at
-        ? new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "";
-
-    const senderTag = isSentByStudent ? "You" : "Technical Support Admin";
-
-    bubble.innerHTML = `
-        <div class="message-sender-tag">${senderTag}</div>
-        <div class="message-text">${escapeHtml(msg.message)}</div>
-        <div class="message-time">${timeStr}</div>
-    `;
-
-    studentChatMessagesContainer.appendChild(bubble);
-    studentChatMessagesContainer.scrollTop = studentChatMessagesContainer.scrollHeight;
-}
-
-function appendMessageToStudentChat(msg) {
-    if (document.querySelector(`[data-message-id="${msg.id}"]`)) {
-        return;
-    }
-
-    const emptyState = studentChatMessagesContainer.querySelector(".chat-empty-state");
-    if (emptyState) {
-        studentChatMessagesContainer.innerHTML = "";
-    }
-
-    renderMessageBubbleStudent(msg);
 }
 
 if (studentChatForm) {
-    studentChatForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    studentChatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = studentChatInput.value.trim();
+        if (!text || !activeStudentChatProjectId) return;
 
-        const messageText = studentChatInput.value.trim();
-        if (!messageText || !activeStudentChatProjectId) {
-            return;
-        }
+        const { data: adminProf } = await supabaseClient.from("profiles").select("id").eq("role", "admin").limit(1).single();
+        const adminId = adminProf ? adminProf.id : null;
+        if (!adminId) { alert("Admin contact unavailable."); return; }
 
-        if (!currentStudentUser) {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            currentStudentUser = user;
-            if (!currentStudentUser) return;
-        }
+        await supabaseClient.from("messages").insert({
+            project_id: activeStudentChatProjectId,
+            sender_id: currentStudentUser.id,
+            receiver_id: adminId,
+            message: text,
+            is_read: false
+        });
 
-        const adminId = await getAdminId();
-        if (!adminId) {
-            alert("Technical team contact could not be resolved. Please try again later.");
-            return;
-        }
-
-        sendStudentChatBtn.disabled = true;
-        studentChatInput.disabled = true;
-
-        try {
-            const { data: newMsg, error } = await supabaseClient
-                .from("messages")
-                .insert({
-                    project_id: activeStudentChatProjectId,
-                    sender_id: currentStudentUser.id,
-                    receiver_id: adminId,
-                    message: messageText,
-                    is_read: false
-                })
-                .select()
-                .single();
-
-            if (error) {
-                console.error("Error sending student message:", error);
-                alert("Unable to send message: " + error.message);
-                return;
-            }
-
-            studentChatInput.value = "";
-            appendMessageToStudentChat(newMsg);
-
-            // Notify Admin
-            const notificationMsg = `New student message for project "${activeStudentChatProjectTitle}": ${messageText.substring(0, 60)}${messageText.length > 60 ? "..." : ""}`;
-            await supabaseClient
-                .from("notifications")
-                .insert({
-                    user_id: adminId,
-                    project_id: activeStudentChatProjectId,
-                    message: notificationMsg,
-                    type: "new_message"
-                });
-
-        } catch (err) {
-            console.error("Error sending message:", err);
-            alert("Unable to send message. Please try again.");
-        } finally {
-            sendStudentChatBtn.disabled = false;
-            studentChatInput.disabled = false;
-            studentChatInput.focus();
-        }
+        studentChatInput.value = "";
+        await loadStudentChatMessages();
     });
 }
 
-// Event listener for student chat buttons on project cards
-projectsList.addEventListener("click", (event) => {
-    const chatBtn = event.target.closest(".student-chat-btn");
-    if (!chatBtn) return;
-
-    const projectId = chatBtn.dataset.projectId;
-    const projectTitle = chatBtn.dataset.projectTitle;
-
-    openStudentChat(projectId, projectTitle);
+projectsList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".student-chat-btn");
+    if (!btn) return;
+    openStudentChat(btn.dataset.projectId, btn.dataset.projectTitle);
 });
 
-// Load Notifications
+// Notifications Loader
 async function loadNotifications(userId) {
-
     const notificationArea = document.getElementById("notificationArea");
+    if (!notificationArea) return;
 
-    if (!notificationArea) {
-        return;
-    }
-
-    const { data: notifications, error } = await supabaseClient
+    const { data: notifications } = await supabaseClient
         .from("notifications")
-        .select("id, project_id, message, type, is_read, created_at")
+        .select("*")
         .eq("user_id", userId)
         .eq("is_read", false)
         .order("created_at", { ascending: false });
 
-    if (error) {
-        console.error("Notification error:", error);
-        return;
-    }
-
     const count = notifications ? notifications.length : 0;
-
-    const sidebarNotifBadge = document.getElementById("sidebarNotifBadge");
-    if (sidebarNotifBadge) {
-        if (count > 0) {
-            sidebarNotifBadge.textContent = count;
-            sidebarNotifBadge.style.display = "inline-block";
-        } else {
-            sidebarNotifBadge.style.display = "none";
-        }
-    }
 
     notificationArea.innerHTML = `
         <div class="notification-wrapper">
-
             <button id="notificationButton" class="notification-button">
                 🔔
                 ${count > 0 ? `<span class="notification-badge">${count}</span>` : ""}
             </button>
-
             <div id="notificationDropdown" class="notification-dropdown">
-
-                ${count === 0
-            ? `
-                            <div class="no-notifications">
-                                <div class="no-notification-icon">🔔</div>
-                                <p>No new notifications</p>
-                            </div>
-                        `
-            : `
-                            <div class="notification-dropdown-header">
-                                <strong>Notifications</strong>
-                                <span>${count} new</span>
-                            </div>
-
-                            ${notifications.map(notification => `
-                                <div class="notification-item">
-
-                                    <div class="notification-icon">
-                                        🔔
-                                    </div>
-
-                                    <div class="notification-content">
-                                        <div class="notification-message">
-                                            ${escapeHtml(notification.message)}
-                                        </div>
-
-                                        <div class="notification-time">
-                                            ${new Date(notification.created_at).toLocaleString()}
-                                        </div>
-                                    </div>
-
-                                </div>
-                            `).join("")}
-                        `
-        }
-
+                ${count === 0 ? `<div class="no-notifications"><p>No new notifications</p></div>` :
+            `<div class="notification-dropdown-header"><strong>Notifications</strong><span>${count} new</span></div>
+                    ${notifications.map(n => `<div class="notification-item"><div class="notification-content"><div class="notification-message">${escapeHtml(n.message)}</div></div></div>`).join("")}`}
             </div>
         </div>
     `;
 
     const notificationButton = document.getElementById("notificationButton");
     const notificationDropdown = document.getElementById("notificationDropdown");
-
     if (notificationButton && notificationDropdown) {
-        notificationButton.addEventListener("click", (event) => {
-            event.stopPropagation();
+        notificationButton.addEventListener("click", (e) => {
+            e.stopPropagation();
             notificationDropdown.classList.toggle("show");
-        });
-
-        document.addEventListener("click", (event) => {
-            if (!notificationArea.contains(event.target)) {
-                notificationDropdown.classList.remove("show");
-            }
         });
     }
 }
 
-// Start dashboard
 loadDashboard();

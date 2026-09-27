@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | StudentBuild</title>
+    <link rel="icon" type="image/png" href="assets/logo/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,17 +19,17 @@
         <div class="auth-card">
 
             <div class="auth-logo">
-                <div class="brand-icon" style="margin: 0 auto 12px; width: 44px; height: 44px; font-size: 22px;">S</div>
+                <img src="assets/logo/studentbuild-mark.png" alt="StudentBuild Logo" style="width: 52px; height: 52px; object-fit: contain; margin: 0 auto 12px; display: block;">
                 <h1>StudentBuild</h1>
                 <p>Your Project. Our Technical Support.</p>
             </div>
 
             <h2>Welcome Back</h2>
-
             <p class="auth-subtitle">
-                Login to continue to your StudentBuild account.
+                Login to continue to your StudentBuild portal.
             </p>
 
+            <!-- Email / Password Login -->
             <form id="loginForm">
 
                 <div class="form-group">
@@ -44,10 +45,21 @@
                 <p id="loginMessage" class="auth-message"></p>
 
                 <button type="submit" class="auth-button">
-                    Login ➔
+                    Login to Account ➔
                 </button>
 
             </form>
+
+            <!-- Divider -->
+            <div class="auth-divider">
+                <span>OR</span>
+            </div>
+
+            <!-- Google Login -->
+            <button type="button" id="googleLoginButton" class="google-login-button">
+                <span class="google-icon">G</span>
+                <span>Continue with Google</span>
+            </button>
 
             <p class="auth-footer">
                 Don't have an account?

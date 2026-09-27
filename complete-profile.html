@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up | StudentBuild</title>
+    <title>Complete Profile | StudentBuild</title>
     <link rel="icon" type="image/png" href="assets/logo/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
 
     <div class="auth-container">
 
-        <div class="auth-card" style="max-width: 540px;">
+        <div class="auth-card" style="max-width: 520px;">
 
             <div class="auth-logo">
                 <img src="assets/logo/studentbuild-mark.png" alt="StudentBuild Logo" style="width: 52px; height: 52px; object-fit: contain; margin: 0 auto 12px; display: block;">
@@ -24,30 +24,29 @@
                 <p>Your Project. Our Technical Support.</p>
             </div>
 
-            <h2>Create Your Account</h2>
+            <h2>Complete Your Profile</h2>
             <p class="auth-subtitle">
-                Start your project journey with StudentBuild technical support.
+                Just a few more details before you start your project journey.
             </p>
 
-            <form id="signupForm">
+            <form id="completeProfileForm">
 
-                <!-- Full Name -->
+                <!-- Name -->
                 <div class="form-group">
                     <label for="fullName">Full Name</label>
-                    <input type="text" id="fullName" placeholder="Enter your full name" required>
+                    <input type="text" id="fullName" placeholder="Your full name" readonly style="opacity: 0.85; background: rgba(255, 255, 255, 0.03);">
                 </div>
 
-                <!-- Email & Phone -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="Enter your email" required>
-                    </div>
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="Your email address" readonly style="opacity: 0.85; background: rgba(255, 255, 255, 0.03);">
+                </div>
 
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" placeholder="10-digit number" pattern="[0-9]{10}" maxlength="10" required>
-                    </div>
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
                 </div>
 
                 <!-- College -->
@@ -60,7 +59,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="department">Department</label>
-                        <input type="text" id="department" placeholder="Example: CSE" required>
+                        <input type="text" id="department" placeholder="Example: CSE, ECE" required>
                     </div>
 
                     <div class="form-group">
@@ -75,31 +74,13 @@
                     </div>
                 </div>
 
-                <!-- Password & Confirm -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Min 6 characters" minlength="6" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" placeholder="Re-enter password" minlength="6" required>
-                    </div>
-                </div>
-
-                <p id="signupMessage" class="auth-message"></p>
+                <p id="profileMessage" class="auth-message"></p>
 
                 <button type="submit" class="auth-button">
-                    Create Account 🚀
+                    Complete Profile ➔
                 </button>
 
             </form>
-
-            <p class="auth-footer">
-                Already have an account?
-                <a href="login.html">Login</a>
-            </p>
 
             <p class="back-home">
                 <a href="index.html">← Back to Home</a>
@@ -113,7 +94,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="supabase-config.js"></script>
-    <script src="signup.js"></script>
+    <script src="complete-profile.js"></script>
 
 </body>
 
