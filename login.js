@@ -314,7 +314,10 @@ if (googleLoginButton) {
                             options: {
 
                                 redirectTo:
-                                    `${window.location.origin}/login.html`
+                                    window.location.hostname === "localhost" ||
+                                        window.location.hostname === "127.0.0.1"
+                                        ? `${window.location.origin}/login.html`
+                                        : "https://studentbuild.vercel.app/login.html"
                             }
                         });
 
