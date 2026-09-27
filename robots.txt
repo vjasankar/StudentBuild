@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin-dashboard.html
+Disallow: /dashboard.html
+Disallow: /login.html
+Disallow: /signup.html
+Disallow: /complete-profile.html
+Disallow: /submit-project.html
+Disallow: /my-projects.html
+Disallow: /messages.html
+Disallow: /notifications.html
+Disallow: /profile.html
+
+Sitemap: https://studentbuild.vercel.app/sitemap.xml
